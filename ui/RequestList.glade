@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.36.0 -->
+<interface>
+  <requires lib="gtk+" version="3.22"/>
+  <object class="GtkTreeView" id="treeView">
+    <property name="width_request">200</property>
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="headers_visible">False</property>
+    <child internal-child="selection">
+      <object class="GtkTreeSelection"/>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="requestUrlColumn">
+        <property name="clickable">True</property>
+        <child>
+          <object class="GtkCellRendererText" id="requestUrlColumnRender"/>
+          <attributes>
+            <attribute name="text">0</attribute>
+          </attributes>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
