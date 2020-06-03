@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import List, Tuple, Dict, Optional
 
 import requests
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib, GtkSource
 
 from models import RequestModel
 from pool import TPE
@@ -63,7 +63,21 @@ class RequestEditor:
 
         self.request_response_notebook: Gtk.Notebook = builder.get_object('requestResponseNotebook')
         self.request_notebook: Gtk.Notebook = builder.get_object('requestNotebook')
-        self.request_text: Gtk.TextView = builder.get_object('requestText')
+        self.lang_manager = GtkSource.LanguageManager()
+        self.request_text: GtkSource.View = builder.get_object('requestText')
+        # Set based on type of request
+        lang = self.lang_manager.get_language('text')
+        self.request_text.get_buffer().set_language(lang)
+
+        self.request_type_notebook: Gtk.Notebook = builder.get_object('requestTypeNotebook')
+        self.request_form_data = ParamTable()
+        self.request_type_notebook.insert_page(self.request_form_data.table, Gtk.Label('Form Data'), 2)
+        self.request_form_urlencoded = ParamTable()
+        self.request_type_notebook.insert_page(self.request_form_urlencoded.table, Gtk.Label('Form Url-Encoded'), 3)
+    
+        self.request_type_popover: Gtk.Popover = builder.get_object('requestTypePopover')
+        self.request_type_popover_tree_view: Gtk.TreeView = builder.get_object('requestTypePopoverTreeView')
+        self.request_type_popover_tree_view_store: Gtk.ListStore = builder.get_object('requestTypePopoverStore')
 
         self.response_notebook: Gtk.Notebook = builder.get_object('responseNotebook')
         self.response_text_overlay: Gtk.Overlay = builder.get_object('responseTextOverlay')
@@ -86,9 +100,40 @@ class RequestEditor:
         self.send_button.connect('clicked', self.on_send_pressed)
         self.save_button.connect('clicked', self.on_save_pressed)
         self.response_text.connect('populate-popup', self._populate_response_text_context_menu)
+        self.request_type_popover_tree_view.connect('row-activated', self._on_popover_row_activated)
 
-        # TODO: Remove me
-        self.url_entry.set_text('http://localhost:5000')
+    def _on_popover_row_activated(self, tree: Gtk.TreeView, path: Gtk.TreePath, col: Gtk.TreeViewColumn):
+        store = self.request_type_popover_tree_view_store
+        it = store.get_iter(path)
+        type_name = store.get_value(it, 0)
+        type_id = store.get_value(it, 1)
+        log.info('Selected request type %s - %s', type_id, type_name)
+        language_map = {
+            'text': 'text',
+            'text-plain': 'text',
+            'json': 'json',
+            'js': 'js',
+            'xml-application': 'xml',
+            'xml-text': 'xml',
+            'html': 'html',
+        }
+
+        content_type_map = {
+            'text-plain': 'text/plain',
+            'json': 'application/json',
+            'js': 'application/javascript',
+            'xml-application': 'application/xml',
+            'xml-text': 'text/xml',
+            'html': 'text/html',
+        }
+
+        lang = self.lang_manager.get_language(language_map[type_id])
+        self.request_text.get_buffer().set_language(lang)
+
+        if type_id != 'text':
+            self.request_header_table.prepend_or_update_row_by_key(('Content-Type', content_type_map[type_id], ''))
+
+        self.request_type_popover.hide()
 
     def _on_request_name_changed(self, entry: Gtk.Entry):
         self.active_request = self.get_request()

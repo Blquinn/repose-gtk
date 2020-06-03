@@ -24,8 +24,20 @@ class ParamTable:
         self.value_column_renderer.connect('edited', self.on_value_column_edited)
         self.description_column_renderer.connect('edited', self.on_description_column_edited)
 
-    def add_row(self):
-        self.store.append(['', '', ''])
+    def add_row(self, row: Tuple[str, str, str] = None):
+        self.store.append(row or ('', '', ''))
+
+    def prepend_row(self, row: Tuple[str, str, str] = None):
+        self.store.prepend(row or ('', '', ''))
+
+    def prepend_or_update_row_by_key(self, row: Tuple[str, str, str]):
+        key, val, desc = row
+        for store_row in self.store:
+            if store_row[0].lower() == key.lower():
+                store_row[1] = val
+                store_row[2] = desc
+                return
+        self.prepend_row(row)
 
     def on_key_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
         self.store[path][0] = text

@@ -1,6 +1,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+gi.require_version('GtkSource', '4')
+from gi.repository import Gtk, GtkSource
 import logging
 from models import RequestModel, MainModel
 from request_editor import RequestEditor
@@ -56,10 +57,16 @@ class MainWindow:
         self.request_editor.set_request(req)
         self.request_list.update_request(current_req)
         self.request_list.set_active_request(req)
+        
+        
+def create_non_gtk_widgets():
+    sv = GtkSource.View()
+    sv.destroy()
 
 
 if __name__ == '__main__':
     log.info('Bootstrapping gtk resources.')
+    create_non_gtk_widgets()
     MainWindow()
     log.info('Starting application.')
     Gtk.main()
