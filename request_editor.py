@@ -10,6 +10,7 @@ import requests
 from models import RequestModel
 from pool import TPE
 from param_table import ParamTable
+import jsonpath_rw
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,10 @@ content_type_map_reverse = {v: k for k, v in content_type_map.items()}
 
 def parse_content_type(content_type_header: str) -> str:
     return content_type_header.split(';')[0]
+
+
+def get_content_type(response: requests.Response) -> str:
+    return parse_content_type(response.headers.get('content-type', ''))
 
 
 def get_language_for_mime_type(mime_type: str) -> str:
@@ -84,6 +89,8 @@ class RequestEditor:
     def __init__(self, main_window):
         self.main_window = main_window
         self.active_request: Optional[RequestModel] = None
+        self.last_response: Optional[requests.Response] = None
+
         builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
         self.outer_box: Gtk.Box = builder.get_object('outerBox')
 
@@ -136,6 +143,9 @@ class RequestEditor:
         self.request_notebook.insert_page(self.param_table.table, Gtk.Label(label='Params'), 0)
         self.request_notebook.insert_page(self.request_header_table.table, Gtk.Label(label='Headers'), 1)
         self.request_notebook.set_current_page(0)
+       
+        self.response_filter_search_entry: Gtk.SearchEntry = builder.get_object('responseFilterSearch')
+        self.response_filter_search_bar: Gtk.SearchBar = builder.get_object('responseSearchBar')
 
         # Connections
 
@@ -145,6 +155,61 @@ class RequestEditor:
         self.response_text.connect('populate-popup', self._populate_response_text_context_menu)
         self.request_type_popover_tree_view.connect('row-activated', self._on_popover_row_activated)
         self.request_type_notebook.connect('switch-page', self._on_request_type_notebook_page_switched)
+        self.response_filter_search_entry.connect('search-changed', self._on_response_filter_changed)
+
+    def _on_response_filter_changed(self, entry: Gtk.SearchEntry):
+        filter_text = entry.get_text()
+        if filter_text == '':
+            self._set_response_text()
+
+        ct = get_content_type(self.last_response)
+        try:
+            if ct == 'application/json':
+                path_expr = jsonpath_rw.parse(filter_text)
+                j = self.last_response.json()
+                match_text = json.dumps([match.value for match in path_expr.find(j)], indent=4) or 'No matches found'
+                self.response_text.get_buffer().set_text(match_text)
+            elif ct in {'text/xml', 'application/xml'}:
+                root = etree.fromstring(self.last_response.text)
+                matches = root.xpath(filter_text)
+                matches_root = etree.Element('matches')
+                for m in matches:
+                    matches_root.append(m)
+
+                matches_html = etree.tostring(matches_root, encoding='unicode', pretty_print=True)
+                self.response_text.get_buffer().set_text(matches_html)
+            elif ct == 'text/html':
+                root = html.fromstring(self.last_response.text)
+                matches = root.xpath(filter_text)
+                matches_root = etree.Element('matches')
+                for m in matches:
+                    matches_root.append(m)
+
+                matches_html = etree.tostring(matches_root, encoding='unicode', pretty_print=True)
+                self.response_text.get_buffer().set_text(matches_html)
+            else:
+                log.warning('Got unexpected content type %s when filtering response.', ct)
+        except Exception as e:
+            log.debug('Failed to filter response json %s', e)
+
+    def _set_response_text(self):
+        response = self.last_response
+        ct = parse_content_type(response.headers.get('content-type'))
+        if ct == 'application/json':
+            j = response.json()
+            txt = json.dumps(j, indent=2)
+        elif ct in {'text/xml', 'application/xml'}:
+            root = etree.fromstring(response.text)
+            txt = etree.tostring(root, encoding='unicode', pretty_print=True)
+        elif ct == 'text/html':  # TODO: Add css path filters
+            root = html.fromstring(response.text)
+            txt = etree.tostring(root, encoding='unicode', pretty_print=True)
+        elif not response.text:
+            txt = 'Empty Response'
+        else:
+            txt = response.text
+
+        self.response_text.get_buffer().set_text(txt)
 
     def _on_request_type_notebook_page_switched(self, notebook: Gtk.Notebook, page: Gtk.Widget, page_num: int):
         # Update the content type
@@ -193,12 +258,31 @@ class RequestEditor:
         self.main_window.request_list.update_request(self.active_request)
 
     def _populate_response_text_context_menu(self, view: Gtk.TextView, popup: Gtk.Widget):
-        if type(popup) is Gtk.Menu:
-            menu: Gtk.Menu = popup
-            item: Gtk.MenuItem = Gtk.MenuItem().new_with_label('Toggle word wrap')
-            item.connect('activate', self._word_wrap_toggle_clicked)
-            menu.append(item)
-            menu.show_all()
+        if type(popup) is not Gtk.Menu:
+            return
+
+        menu: Gtk.Menu = popup
+
+        word_wrap_toggle: Gtk.MenuItem = Gtk.MenuItem().new_with_label('Toggle word wrap')
+        word_wrap_toggle.connect('activate', self._word_wrap_toggle_clicked)
+        menu.append(word_wrap_toggle)
+
+        ct = get_content_type(self.last_response)
+        if self.last_response and ct in {'application/json', 'text/html', 'text/xml', 'application/xml'}:
+            show_filter_toggle: Gtk.MenuItem = Gtk.MenuItem().new_with_label('Show response filter')
+            show_filter_toggle.connect('activate', self._show_filter_toggle_clicked)
+            menu.append(show_filter_toggle)
+
+        menu.show_all()
+
+    # def _reset_response_text_filter(self):
+    #     ct = get_content_type(self.last_response)
+    #     if ct == 'application/json':
+    #     elif ct == 'text/html':
+
+    def _show_filter_toggle_clicked(self, btn):
+        is_revealed = self.response_filter_search_bar.get_search_mode()
+        self.response_filter_search_bar.set_search_mode(not is_revealed)
 
     def _word_wrap_toggle_clicked(self, btn):
         current = self.response_text.get_wrap_mode()
@@ -295,22 +379,9 @@ class RequestEditor:
 
     def handle_request_finished(self, response: requests.Response):
         log.info('Got %s response from %s', response.status_code, self.url_entry.get_text())
+        self.last_response = response
         try:
-            ct = parse_content_type(response.headers.get('content-type'))
-            if ct == 'application/json':
-                j = response.json()
-                txt = json.dumps(j, indent=2)
-            elif ct in {'text/xml', 'application/xml'}:
-                root = etree.fromstring(response.text)
-                txt = etree.tostring(root, encoding='unicode', pretty_print=True)
-            elif ct == 'text/html':
-                root = html.fromstring(response.text)
-                txt = etree.tostring(root, encoding='unicode', pretty_print=True)
-            elif not response.text:
-                txt = 'Empty Response'
-            else:
-                txt = response.text
-
+            self._set_response_text()
             # self.response_status_label.set_markup()
             status_markup = f'{response.status_code} {response.reason}'
             if not response.ok:
@@ -330,7 +401,7 @@ class RequestEditor:
             lang = self.lang_manager.get_language(get_language_for_mime_type(parse_content_type(response.headers.get('content-type'))))
             buf = self.response_text.get_buffer()
             buf.set_language(lang)
-            buf.set_text(txt)
+            # buf.set_text(txt)
             self.update_webview(response)
             self.response_text_raw.get_buffer().set_text(response.text)
             self.response_notebook.set_current_page(1)  # Body page
