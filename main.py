@@ -23,6 +23,7 @@ class MainWindow:
         builder = Gtk.Builder().new_from_file('ui/MainWindow.glade')
         self.win: Gtk.Window = builder.get_object('MainWindow')
         self.win.connect('destroy', Gtk.main_quit)
+        self.win.set_icon_from_file('resources/img/nightcap-round-grey-100x100.png')
 
         self.header_bar: Gtk.HeaderBar = builder.get_object('headerBar')
         self.request_pane: Gtk.Paned = builder.get_object('requestPane')
