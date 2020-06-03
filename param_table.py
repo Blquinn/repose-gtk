@@ -39,5 +39,10 @@ class ParamTable:
     def on_description_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
         self.store[path][2] = text
 
-    def get_values(self) -> List[Tuple[str, str]]:
-        return [(row[0], row[1]) for row in self.store if row[0]]
+    def get_values(self) -> List[Tuple[str, str, str]]:
+        return [(row[0], row[1], row[2]) for row in self.store if row[0]]
+
+    def set_values(self, rows: List[Tuple[str, str, str]]):
+        self.store.clear()
+        for row in rows:
+            self.store.append(row)

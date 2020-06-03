@@ -1,11 +1,12 @@
 import json
 import logging
 from datetime import timedelta
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import requests
 from gi.repository import Gtk, GLib
 
+from models import RequestModel
 from pool import TPE
 from param_table import ParamTable
 
@@ -47,6 +48,7 @@ def format_response_size(response: requests.Response) -> str:
 
 class RequestEditor:
     def __init__(self):
+        self.active_request: Optional[RequestModel] = None
         builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
         self.outer_box: Gtk.Box = builder.get_object('outerBox')
 
@@ -85,6 +87,39 @@ class RequestEditor:
         # TODO: Remove me
         self.url_entry.set_text('http://localhost:4444')
 
+    def get_request(self) -> RequestModel:
+        req = self.active_request
+        req.url = self.url_entry.get_text()
+        req.method = self.get_method()
+        req.request_body = self.get_request_text()
+        req.request_headers = self.request_header_table.get_values()
+        req.params = self.param_table.get_values()
+        req.name = self.request_name_entry.get_text()
+        return req
+
+    def set_request(self, req: RequestModel):
+        self.active_request = req
+        self.url_entry.set_text(req.url)
+        self.set_method(req.method)
+        self.request_text.get_buffer().set_text(req.request_body, -1)
+        self.request_header_table.set_values(req.request_headers)
+        self.param_table.set_values(req.params)
+        self.request_name_entry.set_text(req.name)
+
+    def get_request_text(self) -> str:
+        buf: Gtk.TextBuffer = self.request_text.get_buffer()
+        start, end = buf.get_bounds()
+        return buf.get_text(start, end, True)
+
+    def set_method(self, method: str):
+        it = self.request_method_combo_store.get_iter_first()
+        meth_idx = next((idx for idx, row in enumerate(self.request_method_combo_store[it]) if row[0] == method), 0)
+        self.request_method_combo.set_active(meth_idx)
+
+    def get_method(self) -> str:
+        idx = self.request_method_combo.get_active()
+        return self.request_method_combo_store[idx][0]
+
     def on_save_pressed(self, btn):
         log.info('Save pressed')
 
@@ -99,11 +134,9 @@ class RequestEditor:
         self.set_response_spinner_active(True)
         self.request_response_notebook.set_current_page(1)  # Response page
 
-        params = self.param_table.get_values()
-        headers = dict(self.request_header_table.get_values())
-        buf: Gtk.TextBuffer = self.request_text.get_buffer()
-        start, end = buf.get_bounds()
-        body = self.request_text.get_buffer().get_text(start, end, True)
+        params = [(k, v) for k, v, _ in self.param_table.get_values()]
+        headers = dict([(k, v) for k, v, _ in self.request_header_table.get_values()])
+        body = self.get_request_text()
 
         TPE.submit(self.do_request, meth, url, params, headers, body)
         log.info('Creating request to %s - %s', meth, url)
@@ -127,12 +160,22 @@ class RequestEditor:
             else:
                 txt = response.text
 
-            self.response_status_label.set_text(f'Status: {response.status_code} {response.reason}')
+            # self.response_status_label.set_markup()
+            status_markup = f'{response.status_code} {response.reason}'
+            if not response.ok:
+                status_markup = f'<span foreground="red">{status_markup}</span>'
+
+            self.response_status_label.set_markup(f'Status: {status_markup}')
             self.response_time_label.set_text(f'Time: {timedelta_fmt(response.elapsed)}')
             self.response_size_label.set_text(f'Size: {format_response_size(response)}')
 
-            headers_text = '\n'.join([f'{k}: {v}' for k, v in response.headers.items()])
-            self.response_headers_text.get_buffer().set_text(headers_text)
+            # Write headers
+            headers_markup = '\n'.join([f'<b>{k}</b> → {v}' for k, v in response.headers.items()])
+            buf: Gtk.TextBuffer = self.response_headers_text.get_buffer()
+            start, end = buf.get_bounds()
+            buf.delete(start, end)
+            buf.insert_markup(buf.get_start_iter(), headers_markup, -1)
+
             self.response_text.get_buffer().set_text(txt)
             self.response_notebook.set_current_page(1)  # Body page
         finally:

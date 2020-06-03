@@ -26,7 +26,8 @@ class EchoHandler(server.BaseHTTPRequestHandler):
         print(request_body)
         print("<----- Request End -----\n")
 
-        self.send_response(200)
+        response_code = int(self.headers.get('x-response-code', 200))
+        self.send_response(response_code)
         if content_length:
             self.send_header('Content-Length', content_length)
         self.end_headers()
