@@ -1,45 +1,16 @@
-from http import server
+from flask import Flask, request, Response
+from werkzeug.routing import Rule
+
+app = Flask(__name__)
+app.url_map.add(Rule('/', endpoint='index'))
 
 
-class EchoHandler(server.BaseHTTPRequestHandler):
-    def do_HEAD(self):
-        request_path = self.path
-        print("\n----- Request Start ----->\n")
-        print(request_path)
-
-        print("<----- Request End -----\n")
-        self.send_response(200)
-        self.send_header('X-Foo-Bar', 'Foobar')
-        self.end_headers()
-
-    def do_POST(self):
-        request_path = self.path
-
-        print("\n----- Request Start ----->\n")
-        print(request_path)
-
-        content_length = self.headers.get('content-length')
-        length = int(content_length) if content_length else 0
-
-        print(self.headers)
-        request_body = self.rfile.read(length)
-        print(request_body)
-        print("<----- Request End -----\n")
-
-        response_code = int(self.headers.get('x-response-code', 200))
-        self.send_response(response_code)
-        if content_length:
-            self.send_header('Content-Length', content_length)
-        self.end_headers()
-        if content_length:
-            self.wfile.write(request_body)
-
-    do_PUT = do_POST
-    do_PATCH = do_POST
-    do_GET = do_POST
-    do_DELETE = do_POST
-
-
-if __name__ == '__main__':
-    srv = server.HTTPServer(('localhost', 4444), EchoHandler)
-    srv.serve_forever()
+@app.endpoint('index')
+def echo():
+    code = int(request.headers.get('x-response-code', 200))
+    return Response(response=request.data,
+                    status=code,
+                    headers=dict(request.headers.items()),
+                    mimetype=request.mimetype,
+                    content_type=request.content_type,
+                    direct_passthrough=True)

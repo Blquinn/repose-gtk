@@ -47,7 +47,8 @@ def format_response_size(response: requests.Response) -> str:
 
 
 class RequestEditor:
-    def __init__(self):
+    def __init__(self, main_window):
+        self.main_window = main_window
         self.active_request: Optional[RequestModel] = None
         builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
         self.outer_box: Gtk.Box = builder.get_object('outerBox')
@@ -79,15 +80,19 @@ class RequestEditor:
         self.request_notebook.insert_page(self.request_header_table.table, Gtk.Label(label='Headers'), 1)
         self.request_notebook.set_current_page(0)
 
-
         # Connections
 
+        self.request_name_entry.connect('activate', self._on_request_name_changed)
         self.send_button.connect('clicked', self.on_send_pressed)
         self.save_button.connect('clicked', self.on_save_pressed)
         self.response_text.connect('populate-popup', self._populate_response_text_context_menu)
 
         # TODO: Remove me
-        self.url_entry.set_text('http://localhost:4444')
+        self.url_entry.set_text('http://localhost:5000')
+
+    def _on_request_name_changed(self, entry: Gtk.Entry):
+        self.active_request = self.get_request()
+        self.main_window.request_list.update_request(self.active_request)
 
     def _populate_response_text_context_menu(self, view: Gtk.TextView, popup: Gtk.Widget):
         if type(popup) is Gtk.Menu:

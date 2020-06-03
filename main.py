@@ -30,7 +30,7 @@ class MainWindow:
 
         self.new_request_button.connect('clicked', self.on_new_request_clicked)
 
-        self.request_editor = RequestEditor()
+        self.request_editor = RequestEditor(self)
         self.request_pane.add1(self.request_list.tree_view)
         self.request_pane.add2(self.request_editor.outer_box)
 
@@ -45,7 +45,7 @@ class MainWindow:
         self.update_active_request(req)
 
     def load_requests(self):
-        req = RequestModel(name='New Request', url='http://localhost:4444')
+        req = RequestModel(name='New Request', url='http://localhost:5000')
         self.model.requests = {req.pk: req}
         self.request_editor.set_request(req)
         self.request_list.set_requests(self.model.requests)
