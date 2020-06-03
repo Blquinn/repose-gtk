@@ -3,14 +3,48 @@ import logging
 from datetime import timedelta
 from typing import List, Tuple, Dict, Optional
 
+from gi.repository import Gtk, GLib, GtkSource, WebKit2
+from lxml import etree, html
 import requests
-from gi.repository import Gtk, GLib, GtkSource
 
 from models import RequestModel
 from pool import TPE
 from param_table import ParamTable
 
 log = logging.getLogger(__name__)
+
+
+language_map = {
+    'text': 'text',
+    'text-plain': 'text',
+    'json': 'json',
+    'js': 'js',
+    'xml-application': 'xml',
+    'xml-text': 'xml',
+    'html': 'html',
+}
+
+content_type_map = {
+    'text-plain': 'text/plain',
+    'json': 'application/json',
+    'js': 'application/javascript',
+    'xml-application': 'application/xml',
+    'xml-text': 'text/xml',
+    'html': 'text/html',
+}
+content_type_map_reverse = {v: k for k, v in content_type_map.items()}
+
+
+def parse_content_type(content_type_header: str) -> str:
+    return content_type_header.split(';')[0]
+
+
+def get_language_for_mime_type(mime_type: str) -> str:
+    """
+    Gets the GtkSource.LanguageManager language id for a given mime type.
+    Falls back to text if not found.
+    """
+    return language_map[content_type_map_reverse.get(mime_type) or 'text']
 
 
 def sizeof_fmt(num: float, suffix='B') -> str:
@@ -81,7 +115,14 @@ class RequestEditor:
 
         self.response_notebook: Gtk.Notebook = builder.get_object('responseNotebook')
         self.response_text_overlay: Gtk.Overlay = builder.get_object('responseTextOverlay')
-        self.response_text: Gtk.TextView = builder.get_object('responseText')
+        self.response_text: GtkSource.View = builder.get_object('responseText')
+        self.response_text_raw: Gtk.TextView = builder.get_object('rawResponseView')
+        self.response_webview_scroll_window: Gtk.ScrolledWindow = builder.get_object('webViewScrollWindow')
+        # TODO: Lazy load the web view
+        self.response_webview: WebKit2.WebView = WebKit2.WebView()\
+            .new_with_context(WebKit2.WebContext().new_ephemeral())
+        self.response_webview_scroll_window.add(self.response_webview)
+
         self.response_loading_spinner: Gtk.Spinner = builder.get_object('responseLoadingSpinner')
         self.response_headers_text: Gtk.TextView = builder.get_object('responseHeadersText')
         self.response_status_label: Gtk.Label = builder.get_object('responseStatusLabel')
@@ -108,24 +149,6 @@ class RequestEditor:
         type_name = store.get_value(it, 0)
         type_id = store.get_value(it, 1)
         log.info('Selected request type %s - %s', type_id, type_name)
-        language_map = {
-            'text': 'text',
-            'text-plain': 'text',
-            'json': 'json',
-            'js': 'js',
-            'xml-application': 'xml',
-            'xml-text': 'xml',
-            'html': 'html',
-        }
-
-        content_type_map = {
-            'text-plain': 'text/plain',
-            'json': 'application/json',
-            'js': 'application/javascript',
-            'xml-application': 'application/xml',
-            'xml-text': 'text/xml',
-            'html': 'text/html',
-        }
 
         lang = self.lang_manager.get_language(language_map[type_id])
         self.request_text.get_buffer().set_language(lang)
@@ -188,11 +211,14 @@ class RequestEditor:
     def on_save_pressed(self, btn):
         log.info('Save pressed')
 
-    def on_send_pressed(self, btn):
+    def _format_request_url(self) -> str:
         url = self.url_entry.get_text()
         if not (url.startswith('http://') or url.startswith('https://')):
             url = 'http://' + url
+        return url
 
+    def on_send_pressed(self, btn):
+        url = self._format_request_url()
         meth_idx = self.request_method_combo.get_active()
         meth = self.request_method_combo_store[meth_idx][0]
 
@@ -222,10 +248,16 @@ class RequestEditor:
     def handle_request_finished(self, response: requests.Response):
         log.info('Got %s response from %s', response.status_code, self.url_entry.get_text())
         try:
-            ct = response.headers.get('content-type')
+            ct = parse_content_type(response.headers.get('content-type'))
             if ct == 'application/json':
                 j = response.json()
                 txt = json.dumps(j, indent=2)
+            elif ct in {'text/xml', 'application/xml'}:
+                root = etree.fromstring(response.text)
+                txt = etree.tostring(root, encoding='unicode', pretty_print=True)
+            elif ct == 'text/html':
+                root = html.fromstring(response.text)
+                txt = etree.tostring(root, encoding='unicode', pretty_print=True)
             elif not response.text:
                 txt = 'Empty Response'
             else:
@@ -247,10 +279,25 @@ class RequestEditor:
             buf.delete(start, end)
             buf.insert_markup(buf.get_start_iter(), headers_markup, -1)
 
-            self.response_text.get_buffer().set_text(txt)
+            lang = self.lang_manager.get_language(get_language_for_mime_type(parse_content_type(response.headers.get('content-type'))))
+            buf = self.response_text.get_buffer()
+            buf.set_language(lang)
+            buf.set_text(txt)
+            self.update_webview(response)
+            self.response_text_raw.get_buffer().set_text(response.text)
             self.response_notebook.set_current_page(1)  # Body page
         finally:
             self.set_response_spinner_active(False)
+
+    def update_webview(self, response: requests.Response):
+        """Loads the webview, or show error message if webkit unavailable."""
+        ct = parse_content_type(response.headers.get('content-type'))
+        if not (response.request.method == 'GET' and response.ok and ct == 'text/html'):
+            return
+
+        # self.response_webview.try_close()
+        # TODO: Enable running of javascript
+        self.response_webview.load_html(response.text)
 
     def handle_request_finished_exceptionally(self, ex: Exception):
         self.set_response_spinner_active(False)

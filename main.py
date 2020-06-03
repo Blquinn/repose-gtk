@@ -1,6 +1,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version('GtkSource', '4')
+gi.require_version('WebKit2', '4.0')  # TODO: Ensure we don't crash if webkit isn't available
 from gi.repository import Gtk, GtkSource
 import logging
 from models import RequestModel, MainModel
@@ -32,8 +33,9 @@ class MainWindow:
         self.new_request_button.connect('clicked', self.on_new_request_clicked)
 
         self.request_editor = RequestEditor(self)
-        self.request_pane.add1(self.request_list.tree_view)
-        self.request_pane.add2(self.request_editor.outer_box)
+        # Don't allow either pane to shrink beyond its minimum size
+        self.request_pane.pack1(self.request_list.tree_view, True, False)
+        self.request_pane.pack2(self.request_editor.outer_box, True, False)
 
         self.win.show_all()
 
