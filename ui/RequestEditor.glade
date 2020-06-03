@@ -200,9 +200,22 @@
       </packing>
     </child>
     <child>
-      <object class="GtkNotebook" id="requestResponseNotebook">
+      <object class="GtkStackSwitcher" id="requestResponseStackSwitcher">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
+        <property name="can_focus">False</property>
+        <property name="homogeneous">True</property>
+        <property name="stack">requestResponseStack</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkStack" id="requestResponseStack">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
         <child>
           <object class="GtkNotebook" id="requestNotebook">
             <property name="visible">True</property>
@@ -287,16 +300,13 @@
                         <property name="can_focus">True</property>
                         <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Select the content type of the request.</property>
                         <property name="relief">none</property>
-                        <property name="direction">up</property>
                         <property name="popover">requestTypePopover</property>
                         <child>
                           <object class="GtkImage">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="icon_name">go-up</property>
-                            <property name="icon_size">1</property>
                           </object>
                         </child>
                       </object>
@@ -393,17 +403,8 @@
             </child>
           </object>
           <packing>
-            <property name="menu_label">request</property>
-          </packing>
-        </child>
-        <child type="tab">
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Request</property>
-          </object>
-          <packing>
-            <property name="tab_fill">False</property>
+            <property name="name">Request</property>
+            <property name="title" translatable="yes">Request</property>
           </packing>
         </child>
         <child>
@@ -650,31 +651,16 @@
             </child>
           </object>
           <packing>
+            <property name="name">Response</property>
+            <property name="title" translatable="yes">Response</property>
             <property name="position">1</property>
           </packing>
-        </child>
-        <child type="tab">
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Response</property>
-          </object>
-          <packing>
-            <property name="position">1</property>
-            <property name="tab_fill">False</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
         </child>
       </object>
       <packing>
         <property name="expand">True</property>
         <property name="fill">True</property>
-        <property name="position">2</property>
+        <property name="position">3</property>
       </packing>
     </child>
   </object>

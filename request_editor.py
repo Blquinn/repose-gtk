@@ -95,7 +95,9 @@ class RequestEditor:
         self.send_button: Gtk.Button = builder.get_object('sendButton')
         self.save_button: Gtk.Button = builder.get_object('saveButton')
 
-        self.request_response_notebook: Gtk.Notebook = builder.get_object('requestResponseNotebook')
+        self.request_response_stack_switcher: Gtk.StackSwitcher = builder.get_object('requestResponseStackSwitcher')
+        self.request_response_stack: Gtk.Stack = builder.get_object('requestResponseStack')
+
         self.request_notebook: Gtk.Notebook = builder.get_object('requestNotebook')
         self.lang_manager = GtkSource.LanguageManager()
         self.request_text: GtkSource.View = builder.get_object('requestText')
@@ -108,7 +110,7 @@ class RequestEditor:
         self.request_type_notebook.insert_page(self.request_form_data.table, Gtk.Label('Form Data'), 2)
         self.request_form_urlencoded = ParamTable()
         self.request_type_notebook.insert_page(self.request_form_urlencoded.table, Gtk.Label('Form Url-Encoded'), 3)
-    
+
         self.request_type_popover: Gtk.Popover = builder.get_object('requestTypePopover')
         self.request_type_popover_tree_view: Gtk.TreeView = builder.get_object('requestTypePopoverTreeView')
         self.request_type_popover_tree_view_store: Gtk.ListStore = builder.get_object('requestTypePopoverStore')
@@ -142,6 +144,31 @@ class RequestEditor:
         self.save_button.connect('clicked', self.on_save_pressed)
         self.response_text.connect('populate-popup', self._populate_response_text_context_menu)
         self.request_type_popover_tree_view.connect('row-activated', self._on_popover_row_activated)
+        self.request_type_notebook.connect('switch-page', self._on_request_type_notebook_page_switched)
+
+    def _on_request_type_notebook_page_switched(self, notebook: Gtk.Notebook, page: Gtk.Widget, page_num: int):
+        # Update the content type
+        ct_func = {
+            1: self._get_active_content_type,
+            2: lambda: 'multipart/form-data',
+            3: lambda: 'application/x-www-form-urlencoded',
+        }.get(page_num)
+
+        if not ct_func:
+            self.request_header_table.delete_row_by_key('content-type')
+            return
+
+        self.request_header_table.prepend_or_update_row_by_key(
+            ('Content-Type', ct_func(), ''))
+
+    def _get_active_content_type(self):
+        sel: Gtk.TreeSelection = self.request_type_popover_tree_view.get_selection()
+        model, paths = sel.get_selected_rows()
+        if paths:
+            type_id = model[paths[0]][1]
+            return content_type_map[type_id]
+
+        return 'text/plain'
 
     def _on_popover_row_activated(self, tree: Gtk.TreeView, path: Gtk.TreePath, col: Gtk.TreeViewColumn):
         store = self.request_type_popover_tree_view_store
@@ -153,10 +180,13 @@ class RequestEditor:
         lang = self.lang_manager.get_language(language_map[type_id])
         self.request_text.get_buffer().set_language(lang)
 
-        if type_id != 'text':
+        if type_id == 'text':
+            self.request_header_table.delete_row_by_key('content-type')
+        else:
             self.request_header_table.prepend_or_update_row_by_key(('Content-Type', content_type_map[type_id], ''))
 
         self.request_type_popover.hide()
+        self.request_type_notebook.set_current_page(1)
 
     def _on_request_name_changed(self, entry: Gtk.Entry):
         self.active_request = self.get_request()
@@ -223,14 +253,33 @@ class RequestEditor:
         meth = self.request_method_combo_store[meth_idx][0]
 
         self.set_response_spinner_active(True)
-        self.request_response_notebook.set_current_page(1)  # Response page
+        self.request_response_stack.set_visible_child(self.response_text_overlay)
 
         params = [(k, v) for k, v, _ in self.param_table.get_values()]
         headers = dict([(k, v) for k, v, _ in self.request_header_table.get_values()])
-        body = self.get_request_text()
+        body = self.get_body()
 
         TPE.submit(self.do_request, meth, url, params, headers, body)
         log.info('Creating request to %s - %s', meth, url)
+
+    def get_body(self):
+        page = self.request_type_notebook.get_current_page()
+        return {
+            0: lambda: None,
+            1: self.get_request_text,
+            2: self._get_form_data,
+            3: self._get_urlencoded_data,
+            4: self._get_binary_data
+        }[page]()
+
+    def _get_form_data(self):
+        return [(k, v) for k, v, _, in self.request_form_data.get_values()]
+
+    def _get_urlencoded_data(self):
+        return [(k, v) for k, v, _, in self.request_form_urlencoded.get_values()]
+
+    def _get_binary_data(self):
+        raise NotImplemented
 
     def do_request(self, method: str, url: str, params: List[Tuple[str, str]], headers: Dict[str, str], data=None):
         try:
@@ -238,7 +287,6 @@ class RequestEditor:
                 data = data.encode('utf-8')
 
             res = requests.request(method, url, params=params, headers=headers, data=data)
-            res.text  # Eager load the response body
             # TODO: Load all the data into custom object before sending it back to UI thread
             GLib.idle_add(self.handle_request_finished, res)
         except Exception as e:
@@ -293,9 +341,9 @@ class RequestEditor:
         """Loads the webview, or show error message if webkit unavailable."""
         ct = parse_content_type(response.headers.get('content-type'))
         if not (response.request.method == 'GET' and response.ok and ct == 'text/html'):
+            # self.response_webview.try_close()
             return
 
-        # self.response_webview.try_close()
         # TODO: Enable running of javascript
         self.response_webview.load_html(response.text)
 

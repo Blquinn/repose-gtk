@@ -39,6 +39,17 @@ class ParamTable:
                 return
         self.prepend_row(row)
 
+    def delete_row_by_key(self, key: str):
+        lk = key.lower()
+        idx = None
+        for i, row in enumerate(self.store):
+            if row[0].lower() == lk:
+                idx = i
+                break
+
+        if idx is not None:
+            self.store.remove(self.store[idx].iter)
+
     def on_key_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
         self.store[path][0] = text
 
