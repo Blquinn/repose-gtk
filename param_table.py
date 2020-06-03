@@ -44,5 +44,5 @@ class ParamTable:
 
     def set_values(self, rows: List[Tuple[str, str, str]]):
         self.store.clear()
-        for row in rows:
+        for row in rows or [('', '', '')]:
             self.store.append(row)
