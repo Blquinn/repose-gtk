@@ -19,7 +19,7 @@ class EchoHandler(server.BaseHTTPRequestHandler):
         print(request_path)
 
         content_length = self.headers.get('content-length')
-        length = int(content_length[0]) if content_length else 0
+        length = int(content_length) if content_length else 0
 
         print(self.headers)
         request_body = self.rfile.read(length)

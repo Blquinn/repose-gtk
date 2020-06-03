@@ -79,13 +79,28 @@ class RequestEditor:
         self.request_notebook.insert_page(self.request_header_table.table, Gtk.Label(label='Headers'), 1)
         self.request_notebook.set_current_page(0)
 
+
         # Connections
 
         self.send_button.connect('clicked', self.on_send_pressed)
         self.save_button.connect('clicked', self.on_save_pressed)
+        self.response_text.connect('populate-popup', self._populate_response_text_context_menu)
 
         # TODO: Remove me
         self.url_entry.set_text('http://localhost:4444')
+
+    def _populate_response_text_context_menu(self, view: Gtk.TextView, popup: Gtk.Widget):
+        if type(popup) is Gtk.Menu:
+            menu: Gtk.Menu = popup
+            item: Gtk.MenuItem = Gtk.MenuItem().new_with_label('Toggle word wrap')
+            item.connect('activate', self._word_wrap_toggle_clicked)
+            menu.append(item)
+            menu.show_all()
+
+    def _word_wrap_toggle_clicked(self, btn):
+        current = self.response_text.get_wrap_mode()
+        new = Gtk.WrapMode.NONE if current != Gtk.WrapMode.NONE else Gtk.WrapMode.WORD
+        self.response_text.set_wrap_mode(new)
 
     def get_request(self) -> RequestModel:
         req = self.active_request
@@ -143,9 +158,15 @@ class RequestEditor:
 
     def do_request(self, method: str, url: str, params: List[Tuple[str, str]], headers: Dict[str, str], data=None):
         try:
+            if type(data) is str:
+                data = data.encode('utf-8')
+
             res = requests.request(method, url, params=params, headers=headers, data=data)
+            res.text  # Eager load the response body
+            # TODO: Load all the data into custom object before sending it back to UI thread
             GLib.idle_add(self.handle_request_finished, res)
         except Exception as e:
+            log.error('Error occurred while sending request %s', e)
             GLib.idle_add(self.handle_request_finished_exceptionally, e)
 
     def handle_request_finished(self, response: requests.Response):
