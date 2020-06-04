@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.36.0 -->
+<interface>
+  <requires lib="gtk+" version="3.22"/>
+  <requires lib="gtksourceview" version="4.0"/>
+  <object class="GtkNotebook" id="requestNotebook">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
+    </child>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
+    </child>
+    <child>
+      <object class="GtkNotebook" id="requestTypeNotebook">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="tab_pos">bottom</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">No request body.</property>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">None</property>
+          </object>
+          <packing>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <child>
+              <object class="GtkSourceView" id="requestText">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="left_margin">2</property>
+                <property name="right_margin">2</property>
+                <property name="monospace">True</property>
+                <property name="show_line_numbers">True</property>
+                <property name="tab_width">2</property>
+                <property name="indent_width">2</property>
+                <property name="auto_indent">True</property>
+                <property name="insert_spaces_instead_of_tabs">True</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child type="tab">
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Raw</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkMenuButton">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="focus_on_click">False</property>
+                <property name="receives_default">True</property>
+                <property name="relief">none</property>
+                <property name="popover">requestTypePopover</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="icon_name">go-up</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="spacing">3</property>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">Choose Files</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">No files chosen.</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="padding">3</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">Binary</property>
+          </object>
+          <packing>
+            <property name="position">2</property>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="position">2</property>
+        <property name="tab_fill">False</property>
+      </packing>
+    </child>
+    <child type="tab">
+      <object class="GtkLabel">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Body</property>
+      </object>
+      <packing>
+        <property name="position">2</property>
+        <property name="tab_fill">False</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkPopover" id="requestTypePopover">
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkTreeView" id="requestTypePopoverTreeView">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="model">requestTypePopoverStore</property>
+        <property name="headers_visible">False</property>
+        <property name="search_column">0</property>
+        <property name="activate_on_single_click">True</property>
+        <child internal-child="selection">
+          <object class="GtkTreeSelection"/>
+        </child>
+        <child>
+          <object class="GtkTreeViewColumn">
+            <property name="title" translatable="yes">column</property>
+            <child>
+              <object class="GtkCellRendererText"/>
+              <attributes>
+                <attribute name="text">0</attribute>
+              </attributes>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkListStore" id="requestTypePopoverStore">
+    <columns>
+      <!-- column-name type -->
+      <column type="gchararray"/>
+      <!-- column-name id -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Text</col>
+        <col id="1" translatable="yes">text</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Text (text/plain)</col>
+        <col id="1" translatable="yes">text-plain</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">JSON (application/json)</col>
+        <col id="1" translatable="yes">json</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Javascript (application/javascript)</col>
+        <col id="1" translatable="yes">js</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">XML (application/xml)</col>
+        <col id="1" translatable="yes">xml-application</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">XML (text/xml)</col>
+        <col id="1" translatable="yes">xml-text</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">HTML (text/html)</col>
+        <col id="1" translatable="yes">html</col>
+      </row>
+    </data>
+  </object>
+</interface>
