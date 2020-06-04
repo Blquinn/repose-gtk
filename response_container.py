@@ -1,5 +1,6 @@
 import json
 import logging
+from io import StringIO
 from typing import Optional
 
 import jsonpath_rw
@@ -80,7 +81,7 @@ class ResponseContainer:
         except Exception as e:
             log.debug('Failed to filter response json %s', e)
 
-    def _set_response_text(self):
+    def _get_formatted_response_text(self):
         response = self.last_response
         ct = get_content_type(response)
         if ct == 'application/json':
@@ -97,6 +98,11 @@ class ResponseContainer:
         else:
             txt = response.text
 
+        return txt
+
+    def _set_response_text(self):
+        txt = self._get_formatted_response_text()
+        self._highlight_syntax(txt)
         self.response_text.get_buffer().set_text(txt)
 
     def _populate_response_text_context_menu(self, view: Gtk.TextView, popup: Gtk.Widget):
@@ -148,8 +154,6 @@ class ResponseContainer:
         log.info('Got %s response from %s', response.status_code, response.url)
         self.last_response = response
         try:
-            self._set_response_text()
-            # self.response_status_label.set_markup()
             status_markup = f'{response.status_code} {response.reason}'
             if not response.ok:
                 status_markup = f'<span foreground="red">{status_markup}</span>'
@@ -165,15 +169,27 @@ class ResponseContainer:
             buf.delete(start, end)
             buf.insert_markup(buf.get_start_iter(), headers_markup, -1)
 
-            lang = self.lang_manager.get_language(get_language_for_mime_type(get_content_type(response)))
-            buf = self.response_text.get_buffer()
-            buf.set_language(lang)
-            # buf.set_text(txt)
+            self._set_response_text()
             self.update_webview(response)
             self.response_text_raw.get_buffer().set_text(response.text)
             self.response_notebook.set_current_page(1)  # Body page
         finally:
             self.set_response_spinner_active(False)
+
+    def _highlight_syntax(self, txt: str):
+        lang_id = get_language_for_mime_type(get_content_type(self.last_response))
+        buf: GtkSource.Buffer = self.response_text.get_buffer()
+        if lang_id == 'html':
+            lang_id = 'xml'  # Full HTML highlighting is very slow; it freezes the UI.
+
+        # Disable highlighting for files with really long lines
+        if any((True for line in StringIO(txt) if len(line) > 5000)):
+            lang_id = 'text'
+
+        lang = self.lang_manager.get_language(lang_id)
+        current_lang: GtkSource.Language = buf.get_language()
+        if not current_lang or current_lang.get_id() != lang_id:
+            buf.set_language(lang)
 
     def handle_request_finished_exceptionally(self, ex: Exception):
         self.set_response_spinner_active(False)

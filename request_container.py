@@ -74,7 +74,7 @@ class RequestContainer:
         type_id = store.get_value(it, 1)
         log.info('Selected request type %s - %s', type_id, type_name)
 
-        lang = self.lang_manager.get_language(language_map[type_id])
+        lang = self.lang_manager.get_language(language_map.get(type_id, 'text'))
         self.request_text.get_buffer().set_language(lang)
 
         if type_id == 'text':

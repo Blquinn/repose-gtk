@@ -1,13 +1,16 @@
+import logging
+from pathlib import Path
+
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version('GtkSource', '4')
 gi.require_version('WebKit2', '4.0')  # TODO: Ensure we don't crash if webkit isn't available
 from gi.repository import Gtk, GtkSource
-import logging
+
 from models import RequestModel, MainModel
 from request_editor import RequestEditor
 from request_list import RequestList
-
+from config import DATA_DIR
 
 logging.basicConfig(
     format='%(asctime)s - %(module)s - [%(levelname)s] %(message)s',
@@ -67,7 +70,14 @@ def create_non_gtk_widgets():
     sv.destroy()
 
 
+# Can we do this during install?
+def create_user_dirs():
+    log.info('Ensuring data directories exist.')
+    Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
+
+
 if __name__ == '__main__':
+    create_user_dirs()
     log.info('Bootstrapping gtk resources.')
     create_non_gtk_widgets()
     MainWindow()

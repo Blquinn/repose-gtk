@@ -1,3 +1,5 @@
+from time import sleep
+
 from flask import Flask, request, Response
 from werkzeug.routing import Rule
 
@@ -8,6 +10,10 @@ app.url_map.add(Rule('/', endpoint='index'))
 @app.endpoint('index')
 def echo():
     code = int(request.headers.get('x-response-code', 200))
+    timeout = float(request.headers.get('x-sleep', 0.0))
+    if timeout:
+        sleep(timeout)
+
     return Response(response=request.data,
                     status=code,
                     headers=dict(request.headers.items()),

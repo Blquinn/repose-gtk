@@ -21,6 +21,7 @@ language_map = {
     'html': 'html',
 }
 content_type_map = {
+    'text': 'text/plain',
     'text-plain': 'text/plain',
     'json': 'application/json',
     'js': 'application/javascript',

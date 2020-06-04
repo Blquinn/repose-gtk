@@ -9,16 +9,16 @@ class MainModel:
 
 class RequestModel:
     def __init__(self,
+                 pk: str = str(uuid1()),
                  url: str = '',
                  method: str = 'GET',
                  name: str = '',
                  request_body: str = '',
                  params: List[Tuple[str, str, str]] = None,
                  request_headers: List[Tuple[str, str, str]] = None,
-                 # response_headers: List[Tuple[str, str, str]] = None,
                  saved: bool = False,
                  ):
-        self.pk = str(uuid1())
+        self.pk = pk
         self.url = url
         self.method = method
         self.name = name

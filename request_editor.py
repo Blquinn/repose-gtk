@@ -18,7 +18,7 @@ class RequestEditor:
         self.active_request: Optional[RequestModel] = None
         self.last_response: Optional[requests.Response] = None
 
-        builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
+        builder: Gtk.Builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
         self.outer_box: Gtk.Box = builder.get_object('outerBox')
 
         self.request_method_combo: Gtk.ComboBox = builder.get_object('requestMethodCombo')
