@@ -4,6 +4,8 @@ noun
 
 > a state of rest, sleep, or tranquility.
 
+![](resources/img/nightcap-round-grey-100x100.png)
+
 Repose is a GTK based REST client. Being GTK based, it is cross-platform,
 runs smoothly and sips electrons.
 
@@ -20,6 +22,7 @@ It is heavily influenced by both Postman and Insomnia, but aims to be much light
 ## TODO (Ideas and PRs are welcome)
 
 - [ ] Persistence
+- [ ] Styling
 - [ ] Scripting (Templates, variables, scripting)
 - [ ] CSS selector based filtering for HTML
 - [ ] Write tests
