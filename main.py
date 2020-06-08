@@ -51,7 +51,7 @@ class MainWindow(Gtk.Window):
 
         self._add_blank_request(True)
         self.active_requests_notebook_box.pack_start(self.active_requests_notebook, False, False, 0)
-        self.active_requests_notebook_box.pack_end(self.request_editor.outer_box, True, True, 0)
+        self.active_requests_notebook_box.pack_end(self.request_editor, True, True, 0)
 
         # Don't allow either pane to shrink beyond its minimum size
         self.request_pane.pack1(self.request_list, True, False)

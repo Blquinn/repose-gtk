@@ -12,25 +12,25 @@ from widgets.response_container import ResponseContainer
 log = logging.getLogger(__name__)
 
 
-class RequestEditor:
+@Gtk.Template.from_file('ui/RequestEditor.glade')
+class RequestEditor(Gtk.Box):
+    __gtype_name__ = 'RequestEditor'
+
+    request_method_combo: Gtk.ComboBox = Gtk.Template.Child()
+    request_method_combo_store: Gtk.ListStore = Gtk.Template.Child()
+    request_name_entry: Gtk.Entry = Gtk.Template.Child()
+    url_entry: Gtk.Entry = Gtk.Template.Child()
+    send_button: Gtk.Button = Gtk.Template.Child()
+    save_button: Gtk.Button = Gtk.Template.Child()
+    request_response_stack_switcher: Gtk.StackSwitcher = Gtk.Template.Child()
+    request_response_stack: Gtk.Stack = Gtk.Template.Child()
+
     def __init__(self, main_window):
+        super(RequestEditor, self).__init__()
+
         self.main_window = main_window
         self.active_request: Optional[RequestTreeNode] = None
         self.last_response: Optional[requests.Response] = None
-
-        builder: Gtk.Builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
-        self.outer_box: Gtk.Box = builder.get_object('outerBox')
-
-        self.request_method_combo: Gtk.ComboBox = builder.get_object('requestMethodCombo')
-        self.request_method_combo_store: Gtk.ListStore = builder.get_object('requestMethodComboStore')
-
-        self.request_name_entry: Gtk.Entry = builder.get_object('requestNameEntry')
-        self.url_entry: Gtk.Entry = builder.get_object('urlEntry')
-        self.send_button: Gtk.Button = builder.get_object('sendButton')
-        self.save_button: Gtk.Button = builder.get_object('saveButton')
-
-        self.request_response_stack_switcher: Gtk.StackSwitcher = builder.get_object('requestResponseStackSwitcher')
-        self.request_response_stack: Gtk.Stack = builder.get_object('requestResponseStack')
 
         self.request_container = RequestContainer(self)
         self.request_response_stack.add_titled(self.request_container.request_notebook, 'Request', 'Request')
@@ -40,10 +40,11 @@ class RequestEditor:
 
         # Connections
 
-        self.request_name_entry.connect('activate', self._on_request_name_changed)
-        self.send_button.connect('clicked', self.on_send_pressed)
-        self.save_button.connect('clicked', self.on_save_pressed)
+        # self.request_name_entry.connect('activate', self._on_request_name_changed)
+        # self.send_button.connect('clicked', self.on_send_pressed)
+        # self.save_button.connect('clicked', self.on_save_pressed)
 
+    @Gtk.Template.Callback('on_request_name_changed')
     def _on_request_name_changed(self, entry: Gtk.Entry):
         self.active_request = self.get_request()
 
@@ -76,10 +77,12 @@ class RequestEditor:
         idx = self.request_method_combo.get_active()
         return self.request_method_combo_store[idx][0]
 
-    def on_save_pressed(self, btn):
+    @Gtk.Template.Callback('on_save_pressed')
+    def _on_save_pressed(self, btn):
         log.info('Save pressed')
 
-    def on_send_pressed(self, btn):
+    @Gtk.Template.Callback('on_send_pressed')
+    def _on_send_pressed(self, btn):
         url = self._format_request_url()
         meth_idx = self.request_method_combo.get_active()
         meth = self.request_method_combo_store[meth_idx][0]

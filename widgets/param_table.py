@@ -3,26 +3,22 @@ from typing import List, Tuple
 from gi.repository import Gtk
 
 
-class ParamTable:
+@Gtk.Template.from_file('ui/ParamTable.glade')
+class ParamTable(Gtk.TreeView):
+    __gtype_name__ = 'ParamTable'
+
+    key_column: Gtk.TreeViewColumn = Gtk.Template.Child()
+    key_column_renderer: Gtk.CellRendererText = Gtk.Template.Child()
+    value_column: Gtk.TreeViewColumn = Gtk.Template.Child()
+    value_column_renderer: Gtk.CellRendererText = Gtk.Template.Child()
+    description_column: Gtk.TreeViewColumn = Gtk.Template.Child()
+    description_column_renderer: Gtk.CellRendererText = Gtk.Template.Child()
+
     def __init__(self):
-        builder = Gtk.Builder().new_from_file('ui/ParamTable.glade')
-        self.table: Gtk.TreeView = builder.get_object('ParamTable')
-        self.key_column: Gtk.TreeViewColumn = builder.get_object('keyColumn')
-        self.key_column_renderer: Gtk.CellRendererText = builder.get_object('keyRenderer')
-        self.value_column: Gtk.TreeViewColumn = builder.get_object('valueColumn')
-        self.value_column_renderer: Gtk.CellRendererText = builder.get_object('valueRenderer')
-        self.description_column: Gtk.TreeViewColumn = builder.get_object('descriptionColumn')
-        self.description_column_renderer: Gtk.CellRendererText = builder.get_object('descriptionRenderer')
-
+        super(ParamTable, self).__init__()
         self.store = Gtk.ListStore(str, str, str)  # (key, value, description)
-        self.table.set_model(self.store)
+        self.set_model(self.store)
         self.add_row()
-
-        # Connections
-
-        self.key_column_renderer.connect('edited', self.on_key_column_edited)
-        self.value_column_renderer.connect('edited', self.on_value_column_edited)
-        self.description_column_renderer.connect('edited', self.on_description_column_edited)
 
     def add_row(self, row: Tuple[str, str, str] = None):
         self.store.append(row or ('', '', ''))
@@ -50,16 +46,19 @@ class ParamTable:
         if idx is not None:
             self.store.remove(self.store[idx].iter)
 
-    def on_key_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
+    @Gtk.Template.Callback('on_key_column_renderer_edited')
+    def _on_key_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
         self.store[path][0] = text
 
         if text and len(self.store) and len(self.store[-1][0]):
             self.add_row()
 
-    def on_value_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
+    @Gtk.Template.Callback('on_value_column_renderer_edited')
+    def _on_value_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
         self.store[path][1] = text
 
-    def on_description_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
+    @Gtk.Template.Callback('on_description_column_renderer_edited')
+    def _on_description_column_edited(self, widget: Gtk.Widget, path: Gtk.TreePath, text: str):
         self.store[path][2] = text
 
     def get_values(self) -> List[Tuple[str, str, str]]:

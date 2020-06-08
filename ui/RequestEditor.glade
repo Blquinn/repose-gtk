@@ -2,7 +2,7 @@
 <!-- Generated with glade 3.36.0 -->
 <interface>
   <requires lib="gtk+" version="3.22"/>
-  <object class="GtkListStore" id="requestBodyTypeStore">
+  <object class="GtkListStore" id="request_body_type_store">
     <columns>
       <!-- column-name type -->
       <column type="gchararray"/>
@@ -13,7 +13,7 @@
       </row>
     </data>
   </object>
-  <object class="GtkListStore" id="requestMethodComboStore">
+  <object class="GtkListStore" id="request_method_combo_store">
     <columns>
       <!-- column-name Method -->
       <column type="gchararray"/>
@@ -42,18 +42,19 @@
       </row>
     </data>
   </object>
-  <object class="GtkBox" id="outerBox">
+  <template class="RequestEditor" parent="GtkBox">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="orientation">vertical</property>
     <child>
-      <object class="GtkEntry" id="requestNameEntry">
+      <object class="GtkEntry" id="request_name_entry">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="margin_start">3</property>
         <property name="margin_end">3</property>
         <property name="margin_top">3</property>
         <property name="placeholder_text" translatable="yes">Request Name</property>
+        <signal name="changed" handler="on_request_name_changed" swapped="no"/>
       </object>
       <packing>
         <property name="expand">False</property>
@@ -71,10 +72,10 @@
         <property name="margin_bottom">3</property>
         <property name="spacing">3</property>
         <child>
-          <object class="GtkComboBox" id="requestMethodCombo">
+          <object class="GtkComboBox" id="request_method_combo">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="model">requestMethodComboStore</property>
+            <property name="model">request_method_combo_store</property>
             <property name="active">0</property>
             <property name="id_column">0</property>
             <child>
@@ -91,7 +92,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="urlEntry">
+          <object class="GtkEntry" id="url_entry">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
           </object>
@@ -102,11 +103,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="sendButton">
+          <object class="GtkButton" id="send_button">
             <property name="label" translatable="yes">Send</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <signal name="clicked" handler="on_send_pressed" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -115,11 +117,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="saveButton">
+          <object class="GtkButton" id="save_button">
             <property name="label" translatable="yes">Save</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <signal name="clicked" handler="on_save_pressed" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -135,11 +138,10 @@
       </packing>
     </child>
     <child>
-      <object class="GtkStackSwitcher" id="requestResponseStackSwitcher">
+      <object class="GtkStackSwitcher" id="request_response_stack_switcher">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">center</property>
-        <property name="stack">requestResponseStack</property>
       </object>
       <packing>
         <property name="expand">False</property>
@@ -149,7 +151,7 @@
       </packing>
     </child>
     <child>
-      <object class="GtkStack" id="requestResponseStack">
+      <object class="GtkStack" id="request_response_stack">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="transition_type">slide-left-right</property>
@@ -163,5 +165,5 @@
         <property name="position">3</property>
       </packing>
     </child>
-  </object>
+  </template>
 </interface>

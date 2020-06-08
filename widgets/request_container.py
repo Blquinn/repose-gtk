@@ -29,9 +29,9 @@ class RequestContainer:
 
         self.request_type_notebook: Gtk.Notebook = builder.get_object('requestTypeNotebook')
         self.request_form_data = ParamTable()
-        self.request_type_notebook.insert_page(self.request_form_data.table, Gtk.Label('Form Data'), 2)
+        self.request_type_notebook.insert_page(self.request_form_data, Gtk.Label('Form Data'), 2)
         self.request_form_urlencoded = ParamTable()
-        self.request_type_notebook.insert_page(self.request_form_urlencoded.table, Gtk.Label('Form Url-Encoded'), 3)
+        self.request_type_notebook.insert_page(self.request_form_urlencoded, Gtk.Label('Form Url-Encoded'), 3)
 
         self.request_type_popover: Gtk.Popover = builder.get_object('requestTypePopover')
         self.request_type_popover_tree_view: Gtk.TreeView = builder.get_object('requestTypePopoverTreeView')
@@ -39,8 +39,8 @@ class RequestContainer:
 
         self.param_table = ParamTable()
         self.request_header_table = ParamTable()
-        self.request_notebook.insert_page(self.param_table.table, Gtk.Label(label='Params'), 0)
-        self.request_notebook.insert_page(self.request_header_table.table, Gtk.Label(label='Headers'), 1)
+        self.request_notebook.insert_page(self.param_table, Gtk.Label(label='Params'), 0)
+        self.request_notebook.insert_page(self.request_header_table, Gtk.Label(label='Headers'), 1)
         self.request_notebook.set_current_page(0)
 
         # Connections
