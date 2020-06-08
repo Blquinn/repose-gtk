@@ -4,7 +4,7 @@ from typing import Tuple, List, Dict
 from gi.repository import Gtk, GtkSource
 
 from models import RequestTreeNode
-from param_table import ParamTable
+from widgets.param_table import ParamTable
 from utils import language_map, content_type_map
 
 log = logging.getLogger(__name__)

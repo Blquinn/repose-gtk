@@ -6,8 +6,8 @@ from gi.repository import Gtk, GLib
 
 from models import RequestTreeNode
 from pool import TPE
-from request_container import RequestContainer
-from response_container import ResponseContainer
+from widgets.request_container import RequestContainer
+from widgets.response_container import ResponseContainer
 
 log = logging.getLogger(__name__)
 

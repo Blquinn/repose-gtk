@@ -3,7 +3,7 @@ from typing import Dict
 
 from gi.repository import Gtk
 
-from collection import Collection
+from widgets.collection import Collection
 from models import RequestModel, CollectionModel, RequestTreeNode, FolderModel
 
 log = logging.getLogger(__name__)

@@ -1,5 +1,4 @@
 import logging
-from threading import local
 from typing import List
 
 import gi
@@ -11,9 +10,9 @@ from gi.repository import Gtk, GtkSource, Gdk, GLib
 
 from models import RequestModel, MainModel, CollectionModel, RequestTreeNode
 from db import CollectionDAO, DB_EXECUTOR
-from request_editor import RequestEditor
-from request_list import RequestList
-from active_request_tab import ActiveRequestTab
+from widgets.request_editor import RequestEditor
+from widgets.request_list import RequestList
+from widgets.active_request_tab import ActiveRequestTab
 
 logging.basicConfig(
     format='%(asctime)s - %(module)s - [%(levelname)s] %(message)s',
