@@ -3,7 +3,7 @@ from typing import Tuple, List, Dict
 
 from gi.repository import Gtk, GtkSource
 
-from models import RequestModel
+from models import RequestTreeNode
 from param_table import ParamTable
 from utils import language_map, content_type_map
 
@@ -18,6 +18,11 @@ class RequestContainer:
         self.request_notebook: Gtk.Notebook = builder.get_object('requestNotebook')
         self.lang_manager = GtkSource.LanguageManager()
         self.request_text: GtkSource.View = builder.get_object('requestText')
+
+        style_manager = GtkSource.StyleSchemeManager()
+        scheme: GtkSource.StyleScheme = style_manager.get_scheme('kate')
+        self.request_text.get_buffer().set_style_scheme(scheme)
+
         # Set based on type of request
         lang = self.lang_manager.get_language('text')
         self.request_text.get_buffer().set_language(lang)
@@ -109,12 +114,14 @@ class RequestContainer:
     def _get_binary_data(self):
         raise NotImplemented
 
-    def set_request(self, req: RequestModel):
-        self. request_text.get_buffer().set_text(req.request_body, -1)
+    def set_request(self, node: RequestTreeNode):
+        req = node.request
+        self.request_text.get_buffer().set_text(req.request_body, -1)
         self.request_header_table.set_values(req.request_headers)
         self.param_table.set_values(req.params)
 
-    def get_request(self, req: RequestModel):
+    def get_request(self, node: RequestTreeNode):
+        req = node.request
         req.request_body = self.get_request_text()
         req.request_headers = self.request_header_table.get_values()
         req.params = self.param_table.get_values()

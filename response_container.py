@@ -13,39 +13,43 @@ from utils import get_content_type, timedelta_fmt, format_response_size, get_lan
 log = logging.getLogger(__name__)
 
 
-class ResponseContainer:
+@Gtk.Template.from_file('ui/ResponseContainer.glade')
+class ResponseContainer(Gtk.Overlay):
+    __gtype_name__ = 'ResponseContainer'
+
+    response_notebook: Gtk.Notebook = Gtk.Template.Child()
+    response_text: GtkSource.View = Gtk.Template.Child()
+    response_text_raw: Gtk.TextView = Gtk.Template.Child()
+    response_loading_spinner: Gtk.Spinner = Gtk.Template.Child()
+    response_headers_text: Gtk.TextView = Gtk.Template.Child()
+    response_status_label: Gtk.Label = Gtk.Template.Child()
+    response_time_label: Gtk.Label = Gtk.Template.Child()
+    response_size_label: Gtk.Label = Gtk.Template.Child()
+
+    response_filter_search_entry: Gtk.SearchEntry = Gtk.Template.Child()
+    response_filter_search_bar: Gtk.SearchBar = Gtk.Template.Child()
+    response_webview_scroll_window: Gtk.ScrolledWindow = Gtk.Template.Child()
+
+    response_menu_popover: Gtk.Popover = Gtk.Template.Child()
+    response_menu_toggle_filter: Gtk.MenuItem = Gtk.Template.Child()
+
     def __init__(self, request_editor):
+        super(ResponseContainer, self).__init__()
+
         self.last_response: Optional[requests.Response] = None
-
-        builder = Gtk.Builder().new_from_file('ui/ResponseContainer.glade')
-        self.response_text_overlay: Gtk.Overlay = builder.get_object('responseTextOverlay')
-
         self.lang_manager = GtkSource.LanguageManager()
 
-        self.response_notebook: Gtk.Notebook = builder.get_object('responseNotebook')
-        self.response_text_overlay: Gtk.Overlay = builder.get_object('responseTextOverlay')
-        self.response_text: GtkSource.View = builder.get_object('responseText')
-        self.response_text_raw: Gtk.TextView = builder.get_object('rawResponseView')
-        self.response_webview_scroll_window: Gtk.ScrolledWindow = builder.get_object('webViewScrollWindow')
+        style_manager = GtkSource.StyleSchemeManager()
+        # scheme: GtkSource.StyleScheme = mgr.get_scheme('classic')
+        scheme: GtkSource.StyleScheme = style_manager.get_scheme('kate')
+        self.response_text.get_buffer().set_style_scheme(scheme)
+
         # TODO: Lazy load the web view
         self.response_webview: WebKit2.WebView = WebKit2.WebView() \
             .new_with_context(WebKit2.WebContext().new_ephemeral())
         self.response_webview_scroll_window.add(self.response_webview)
 
-        self.response_loading_spinner: Gtk.Spinner = builder.get_object('responseLoadingSpinner')
-        self.response_headers_text: Gtk.TextView = builder.get_object('responseHeadersText')
-        self.response_status_label: Gtk.Label = builder.get_object('responseStatusLabel')
-        self.response_time_label: Gtk.Label = builder.get_object('responseTimeLabel')
-        self.response_size_label: Gtk.Label = builder.get_object('responseSizeLabel')
-
-        self.response_filter_search_entry: Gtk.SearchEntry = builder.get_object('responseFilterSearch')
-        self.response_filter_search_bar: Gtk.SearchBar = builder.get_object('responseSearchBar')
-
-        # Connections
-
-        self.response_text.connect('populate-popup', self._populate_response_text_context_menu)
-        self.response_filter_search_entry.connect('search-changed', self._on_response_filter_changed)
-
+    @Gtk.Template.Callback('on_response_filter_changed')
     def _on_response_filter_changed(self, entry: Gtk.SearchEntry):
         filter_text = entry.get_text()
         if filter_text == '':
@@ -84,19 +88,22 @@ class ResponseContainer:
     def _get_formatted_response_text(self):
         response = self.last_response
         ct = get_content_type(response)
-        if ct == 'application/json':
-            j = response.json()
-            txt = json.dumps(j, indent=2)
-        elif ct in {'text/xml', 'application/xml'}:
-            root = etree.fromstring(response.text)
-            txt = etree.tostring(root, encoding='unicode', pretty_print=True)
-        elif ct == 'text/html':  # TODO: Add css path filters
-            root = html.fromstring(response.text)
-            txt = etree.tostring(root, encoding='unicode', pretty_print=True)
-        elif not response.text:
-            txt = 'Empty Response'
-        else:
-            txt = response.text
+        txt = response.text
+        try:
+            if ct == 'application/json':
+                j = response.json()
+                txt = json.dumps(j, indent=2)
+            elif ct in {'text/xml', 'application/xml'}:
+                root = etree.fromstring(response.text)
+                txt = etree.tostring(root, encoding='unicode', pretty_print=True)
+            elif ct == 'text/html':  # TODO: Add css path filters
+                root = html.fromstring(response.text)
+                txt = etree.tostring(root, encoding='unicode', pretty_print=True)
+            elif not response.text:
+                txt = 'Empty Response'
+        except Exception as e:
+            log.warning('Failed to parse %s response: %s', ct, e)
+            txt = 'Failed to parse response.'
 
         return txt
 
@@ -105,6 +112,7 @@ class ResponseContainer:
         self._highlight_syntax(txt)
         self.response_text.get_buffer().set_text(txt)
 
+    @Gtk.Template.Callback('populate_response_text_context_menu')
     def _populate_response_text_context_menu(self, view: Gtk.TextView, popup: Gtk.Widget):
         if type(popup) is not Gtk.Menu:
             return
@@ -130,10 +138,10 @@ class ResponseContainer:
     def set_response_spinner_active(self, active: bool):
         if active:
             self.response_loading_spinner.start()
-            self.response_text_overlay.reorder_overlay(self.response_loading_spinner, 1)
+            self.reorder_overlay(self.response_loading_spinner, 1)
         else:
             self.response_loading_spinner.stop()
-            self.response_text_overlay.reorder_overlay(self.response_loading_spinner, 0)
+            self.reorder_overlay(self.response_loading_spinner, 0)
 
     def update_webview(self, response: requests.Response):
         """Loads the webview, or show error message if webkit unavailable."""

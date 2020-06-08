@@ -22,7 +22,9 @@ It is heavily influenced by both Postman and Insomnia, but aims to be much light
 ## TODO (Ideas and PRs are welcome)
 
 - [ ] Persistence
-- [ ] Collections, folders and workspaces
+- [ ] Collections and folders
+- [ ] Workspaces
+- [ ] Websockets
 - [ ] Styling
 - [ ] Scripting (Templates, variables, scripting)
 - [ ] CSS selector based filtering for HTML

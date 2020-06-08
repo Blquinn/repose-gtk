@@ -3,7 +3,34 @@
 <interface>
   <requires lib="gtk+" version="3.22"/>
   <requires lib="gtksourceview" version="4.0"/>
-  <object class="GtkOverlay" id="responseTextOverlay">
+  <object class="GtkPopoverMenu" id="response_menu_popover">
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkListBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <child>
+          <object class="GtkListBoxRow">
+            <property name="width_request">100</property>
+            <property name="height_request">80</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <child>
+              <object class="GtkAccelLabel" id="response_menu_toggle_filter">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Filter Response</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="submenu">submenu0</property>
+      </packing>
+    </child>
+  </object>
+  <template class="ResponseContainer" parent="GtkOverlay">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <child>
@@ -17,7 +44,7 @@
             <property name="can_focus">False</property>
             <property name="homogeneous">True</property>
             <child>
-              <object class="GtkLabel" id="responseStatusLabel">
+              <object class="GtkLabel" id="response_status_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Status: -</property>
@@ -30,7 +57,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="responseTimeLabel">
+              <object class="GtkLabel" id="response_time_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Time: -</property>
@@ -43,7 +70,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="responseSizeLabel">
+              <object class="GtkLabel" id="response_size_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Size: -</property>
@@ -64,7 +91,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkNotebook" id="responseNotebook">
+          <object class="GtkNotebook" id="response_notebook">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <child>
@@ -73,7 +100,7 @@
                 <property name="can_focus">True</property>
                 <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkTextView" id="responseHeadersText">
+                  <object class="GtkTextView" id="response_headers_text">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="pixels_above_lines">2</property>
@@ -109,18 +136,19 @@
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkSearchBar" id="responseSearchBar">
+                      <object class="GtkSearchBar" id="response_filter_search_bar">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="show_close_button">True</property>
                         <child>
-                          <object class="GtkSearchEntry" id="responseFilterSearch">
+                          <object class="GtkSearchEntry" id="response_filter_search_entry">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="max_width_chars">40</property>
                             <property name="primary_icon_name">edit-find-symbolic</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">False</property>
+                            <signal name="search-changed" handler="on_response_filter_changed" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -136,7 +164,7 @@
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkSourceView" id="responseText">
+                          <object class="GtkSourceView" id="response_text">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="editable">False</property>
@@ -149,6 +177,7 @@
                             <property name="tab_width">4</property>
                             <property name="indent_width">4</property>
                             <property name="indent_on_tab">False</property>
+                            <signal name="populate-popup" handler="populate_response_text_context_menu" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -176,7 +205,7 @@
                     <property name="can_focus">True</property>
                     <property name="shadow_type">in</property>
                     <child>
-                      <object class="GtkTextView" id="rawResponseView">
+                      <object class="GtkTextView" id="response_text_raw">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="editable">False</property>
@@ -202,7 +231,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkScrolledWindow" id="webViewScrollWindow">
+                  <object class="GtkScrolledWindow" id="response_webview_scroll_window">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="shadow_type">in</property>
@@ -256,6 +285,25 @@
             <child type="tab">
               <placeholder/>
             </child>
+            <child type="action-end">
+              <object class="GtkMenuButton" id="response_menu_button">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="focus_on_click">False</property>
+                <property name="receives_default">True</property>
+                <property name="popover">response_menu_popover</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="icon_name">document-properties</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">True</property>
@@ -269,7 +317,7 @@
       </packing>
     </child>
     <child type="overlay">
-      <object class="GtkSpinner" id="responseLoadingSpinner">
+      <object class="GtkSpinner" id="response_loading_spinner">
         <property name="width_request">50</property>
         <property name="height_request">50</property>
         <property name="visible">True</property>
@@ -278,5 +326,5 @@
         <property name="valign">center</property>
       </object>
     </child>
-  </object>
+  </template>
 </interface>

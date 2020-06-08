@@ -4,7 +4,7 @@ from typing import List, Tuple, Dict, Optional
 import requests
 from gi.repository import Gtk, GLib
 
-from models import RequestModel
+from models import RequestTreeNode
 from pool import TPE
 from request_container import RequestContainer
 from response_container import ResponseContainer
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class RequestEditor:
     def __init__(self, main_window):
         self.main_window = main_window
-        self.active_request: Optional[RequestModel] = None
+        self.active_request: Optional[RequestTreeNode] = None
         self.last_response: Optional[requests.Response] = None
 
         builder: Gtk.Builder = Gtk.Builder().new_from_file('ui/RequestEditor.glade')
@@ -36,7 +36,7 @@ class RequestEditor:
         self.request_response_stack.add_titled(self.request_container.request_notebook, 'Request', 'Request')
 
         self.response_container = ResponseContainer(self)
-        self.request_response_stack.add_titled(self.response_container.response_text_overlay, 'Response', 'Response')
+        self.request_response_stack.add_titled(self.response_container, 'Response', 'Response')
 
         # Connections
 
@@ -46,22 +46,26 @@ class RequestEditor:
 
     def _on_request_name_changed(self, entry: Gtk.Entry):
         self.active_request = self.get_request()
-        self.main_window.request_list.update_request(self.active_request)
 
-    def get_request(self) -> RequestModel:
-        req = self.active_request
-        self.request_container.get_request(req)
+        if self.active_request.collection_pk:
+            self.main_window.request_list.update_request(self.active_request)
+
+    def get_request(self) -> RequestTreeNode:
+        self.request_container.get_request(self.active_request)
+        node = self.active_request
+        req = node.request
         req.url = self.url_entry.get_text()
         req.method = self.get_method()
         req.name = self.request_name_entry.get_text()
-        return req
+        return node
 
-    def set_request(self, req: RequestModel):
-        self.active_request = req
+    def set_request(self, node: RequestTreeNode):
+        self.active_request = node
+        req = node.request
         self.url_entry.set_text(req.url)
         self.set_method(req.method)
         self.request_name_entry.set_text(req.name)
-        self.request_container.set_request(req)
+        self.request_container.set_request(node)
 
     def set_method(self, method: str):
         it = self.request_method_combo_store.get_iter_first()
@@ -81,7 +85,7 @@ class RequestEditor:
         meth = self.request_method_combo_store[meth_idx][0]
 
         self.response_container.set_response_spinner_active(True)
-        self.request_response_stack.set_visible_child(self.response_container.response_text_overlay)
+        self.request_response_stack.set_visible_child(self.response_container)
 
         params = self.request_container.get_params()
         headers = self.request_container.get_headers()
