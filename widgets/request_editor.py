@@ -38,12 +38,6 @@ class RequestEditor(Gtk.Box):
         self.response_container = ResponseContainer(self)
         self.request_response_stack.add_titled(self.response_container, 'Response', 'Response')
 
-        # Connections
-
-        # self.request_name_entry.connect('activate', self._on_request_name_changed)
-        # self.send_button.connect('clicked', self.on_send_pressed)
-        # self.save_button.connect('clicked', self.on_save_pressed)
-
     @Gtk.Template.Callback('on_request_name_changed')
     def _on_request_name_changed(self, entry: Gtk.Entry):
         self.active_request = self.get_request()

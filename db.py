@@ -42,7 +42,7 @@ def get_connection(path: str = None) -> sqlite3.Connection:
         db.execute("""
         create table requests (
             id text primary key,
-            collection_id text not null references collections,
+            collection_id text references collections,
             parent_id text references requests,
             folder_json text, 
             request_json text 
@@ -83,8 +83,12 @@ class RequestDAO:
     def __init__(self, db: sqlite3.Connection = None):
         self.db = db or db_local.db
 
-    def get_requests(self) -> List[RequestTreeNode]:
-        rows = self.db.execute('select id, collection_id, parent_id, folder_json, request_json from requests').fetchall()
+    def get_requests(self, has_collection=True) -> List[RequestTreeNode]:
+        rows = self.db.execute(f'''
+        select id, collection_id, parent_id, folder_json, request_json 
+        from requests
+        {'where collection_id is not null' if has_collection else 'where collection_id is null'}
+        ''').fetchall()
         rows = (NodeRecord(*row) for row in rows)
         return map_records(rows)
 

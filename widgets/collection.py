@@ -1,8 +1,10 @@
-from typing import List
+import logging
 
 from gi.repository import Gtk
 
-from models import RequestModel, CollectionModel, RequestTreeNode
+from models import CollectionModel, RequestTreeNode
+
+log = logging.getLogger(__name__)
 
 
 @Gtk.Template.from_file("ui/Collection.glade")
@@ -28,6 +30,7 @@ class Collection(Gtk.Box):
     def _tree_view_row_activated(self, view: Gtk.TreeView, path: Gtk.TreePath, col: Gtk.TreeViewColumn):
         it = self.requests_tree_store.get_iter(path)
         req_pk = self.requests_tree_store.get_value(it, 1)
+        log.info('')
         # print(view, path, col)
 
     @Gtk.Template.Callback()

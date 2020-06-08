@@ -23,5 +23,4 @@ class ActiveRequestTab(Gtk.Box):
 
     @Gtk.Template.Callback('close_button_clicked')
     def _on_close_button_clicked(self, btn: Gtk.Button):
-        print('Close button clicked', btn)
         self.main_window.close_tab(self)
