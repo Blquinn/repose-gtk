@@ -2,4 +2,4 @@ pycairo==1.19.1
 PyGObject==3.36.1
 requests==2.23.0
 jsonpath-rw==1.4.0
-lxml==4.5.1
+lxml==4.6.2
